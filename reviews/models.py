@@ -89,8 +89,8 @@ class PlacePhotos(models.Model):
         on_delete=models.CASCADE,
     )
     image = models.ImageField(
-        upload_to='places',
-        verbose_name='Ссылочное поле(заполняется автоматически)',
+        upload_to='images',
+        verbose_name='Вставьте фото заведения',
         unique=True,
         null=True,
         blank=True,
