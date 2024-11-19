@@ -55,7 +55,7 @@ class Places(models.Model):
         verbose_name='Поле для связи с категорией заведения',
         help_text='Выберите категорию заведения',
         null=True,
-        blank=False,
+        blank=True,
         on_delete=models.SET_NULL,
     )
     slug = models.SlugField(
