@@ -28,6 +28,7 @@ class PlacesAdmin(admin.ModelAdmin):
         'address',
     ]
 
+
 @admin.register(PlacePhotos)
 class PlacePhotosAdmin(admin.ModelAdmin):
     list_display = [
@@ -37,6 +38,7 @@ class PlacePhotosAdmin(admin.ModelAdmin):
     list_filter = [
         'place_id',
     ]
+
 
 @admin.register(Reviews)
 class ReviewsAdmin(admin.ModelAdmin):
@@ -54,6 +56,7 @@ class ReviewsAdmin(admin.ModelAdmin):
         'text',
     ]
 
+
 @admin.register(Questions)
 class QuestionsAdmin(admin.ModelAdmin):
     list_display = [
@@ -66,6 +69,7 @@ class QuestionsAdmin(admin.ModelAdmin):
         'place_id',
         'text',
     ]
+
 
 @admin.register(Comments)
 class CommentsAdmin(admin.ModelAdmin):
@@ -81,6 +85,7 @@ class CommentsAdmin(admin.ModelAdmin):
         'user_id',
         'text',
     ]
+
 
 @admin.register(Votes)
 class VotesAdmin(admin.ModelAdmin):

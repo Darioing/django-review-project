@@ -39,4 +39,3 @@ def test_str_method():
     """Тест: метод __str__ возвращает значение поля name."""
     category = Categories.objects.create(name="Ресторан")
     assert str(category) == "Ресторан"
-

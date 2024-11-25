@@ -9,6 +9,7 @@ from unidecode import unidecode
 
 User = get_user_model()
 
+
 class Categories(models.Model):
     name = models.CharField(
         max_length=50,
@@ -32,10 +33,11 @@ class Categories(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+
 
 class Places(models.Model):
     name = models.CharField(
@@ -73,10 +75,11 @@ class Places(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name = 'Заведение'
         verbose_name_plural = 'Заведения'
+
 
 class PlacePhotos(models.Model):
     place_id = models.ForeignKey(
@@ -97,10 +100,11 @@ class PlacePhotos(models.Model):
 
     def __str__(self):
         return self.place_id
-    
+
     class Meta:
         verbose_name = 'Фотографии заведения'
         verbose_name_plural = 'Фотографии заведений'
+
 
 class Reviews(models.Model):
     place_id = models.ForeignKey(
@@ -167,10 +171,11 @@ class Reviews(models.Model):
 
     def __str__(self):
         return f'{self.user_id} {self.place_id} {self.text[:30]}'
-    
+
     class Meta:
         verbose_name = 'Отзыв заведения'
         verbose_name_plural = 'Отзывы заведений'
+
 
 class Questions(models.Model):
     place_id = models.ForeignKey(
@@ -201,12 +206,14 @@ class Questions(models.Model):
         blank=False,
         auto_now_add=True,
     )
+
     def __str__(self):
         return f'{self.user_id} {self.place_id} {self.text[:30]}'
-    
+
     class Meta:
         verbose_name = 'Вопрос к заведению'
         verbose_name_plural = 'Вопросы к заведениям'
+
 
 class Comments(models.Model):
     user_id = models.ForeignKey(
@@ -235,10 +242,11 @@ class Comments(models.Model):
 
     def __str__(self):
         return f'{self.user_id} {self.text[:30]} {self.content_object}'
-    
+
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+
 
 class Votes(models.Model):
     user_id = models.ForeignKey(
@@ -251,7 +259,8 @@ class Votes(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
-    vote_type = models.SmallIntegerField(choices=[(1, 'Upvote'), (-1, 'Downvote')])
+    vote_type = models.SmallIntegerField(
+        choices=[(1, 'Upvote'), (-1, 'Downvote')])
     created_at = models.DateTimeField(
         verbose_name='Поле для даты оставления ревью',
         null=False,
@@ -261,7 +270,7 @@ class Votes(models.Model):
 
     def __str__(self):
         return f'{self.user_id} оставил {self.vote_type} к {self.content_object}'
-    
+
     class Meta:
         verbose_name = 'Оценка'
         verbose_name_plural = 'Оценки'

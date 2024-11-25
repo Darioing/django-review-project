@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 @pytest.mark.django_db
 def test_create_user_success():
     """Тест успешного создания пользователя."""
@@ -78,6 +79,7 @@ def test_superuser_invalid_fields():
             second_name="User",
             is_superuser=False
         )
+
 
 @pytest.mark.django_db
 def test_max_length_first_name():
