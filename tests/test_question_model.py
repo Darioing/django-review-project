@@ -41,7 +41,7 @@ def test_place_deletion_cascades_to_questions(user, place):
     question = Questions.objects.create(
         place_id=place, user_id=user, text="Как работают по выходным?")
     place.delete()
-    assert Questions.objects.filter(id=question.id).count() == 0
+    assert Questions.objects.all().count() == 0
 
 
 @pytest.mark.django_db
@@ -66,7 +66,7 @@ def test_user_deletion_cascades_to_questions(user, place):
     question = Questions.objects.create(
         place_id=place, user_id=user, text="Как работают по выходным?")
     user.delete()
-    assert Questions.objects.filter(id=question.id).count() == 0
+    assert Questions.objects.all().count() == 0
 
 
 @pytest.mark.django_db
