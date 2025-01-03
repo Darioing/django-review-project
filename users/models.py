@@ -52,17 +52,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     Кастомная модель пользователя
     '''
 
-    first_name = models.CharField(
-        max_length=50,
+    FIO = models.CharField(
+        max_length=150,
         blank=False,
         null=False,
         verbose_name='Имя',
-    )
-    second_name = models.CharField(
-        max_length=50,
-        blank=False,
-        null=False,
-        verbose_name='Фамилия',
     )
     email = models.EmailField(
         unique=True,
@@ -97,7 +91,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
 
-    REQUIRED_FIELDS = ['first_name', 'second_name']
+    REQUIRED_FIELDS = ['FIO']
 
     class Meta:
         verbose_name = 'Пользователь'

@@ -99,7 +99,7 @@ class PlacePhotos(models.Model):
     )
 
     def __str__(self):
-        return self.place_id
+        return self.place_id.name
 
     class Meta:
         verbose_name = 'Фотографии заведения'
