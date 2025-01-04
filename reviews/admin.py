@@ -13,6 +13,7 @@ class CategoriesAdmin(admin.ModelAdmin):
     list_filter = [
         'name',
     ]
+    readonly_fields = ('slug',)
 
 
 @admin.register(Places)
@@ -27,6 +28,7 @@ class PlacesAdmin(admin.ModelAdmin):
         'name',
         'address',
     ]
+    readonly_fields = ('slug',)
 
 
 @admin.register(PlacePhotos)

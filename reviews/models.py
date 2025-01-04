@@ -5,9 +5,18 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from unidecode import unidecode
+from django.core.exceptions import ValidationError
 
 
 User = get_user_model()
+
+
+class TimestampMixin(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
 
 
 class Categories(models.Model):
@@ -27,8 +36,7 @@ class Categories(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            name_transliterated = unidecode(self.name)
-            self.slug = slugify(name_transliterated)
+            self.slug = slugify(unidecode(self.name))
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -69,8 +77,7 @@ class Places(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            name_transliterated = unidecode(self.name)
-            self.slug = slugify(name_transliterated)
+            self.slug = slugify(unidecode(self.name))
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -88,6 +95,7 @@ class PlacePhotos(models.Model):
         help_text='Выберите заведение',
         null=False,
         blank=False,
+        related_name='photos',
         on_delete=models.CASCADE,
     )
     image = models.ImageField(
@@ -106,7 +114,7 @@ class PlacePhotos(models.Model):
         verbose_name_plural = 'Фотографии заведений'
 
 
-class Reviews(models.Model):
+class Reviews(TimestampMixin):
     place_id = models.ForeignKey(
         Places,
         verbose_name='Поле для связи с заведением',
@@ -162,12 +170,6 @@ class Reviews(models.Model):
             MinValueValidator(1)
         ],
     )
-    created_at = models.DateTimeField(
-        verbose_name='Поле для даты оставления ревью',
-        null=False,
-        blank=False,
-        auto_now_add=True,
-    )
 
     def __str__(self):
         return f'{self.user_id} {self.place_id} {self.text[:30]}'
@@ -175,9 +177,13 @@ class Reviews(models.Model):
     class Meta:
         verbose_name = 'Отзыв заведения'
         verbose_name_plural = 'Отзывы заведений'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'place_id', 'text'], name='unique_review')
+        ]
 
 
-class Questions(models.Model):
+class Questions(TimestampMixin):
     place_id = models.ForeignKey(
         Places,
         verbose_name='Поле для связи с заведением',
@@ -193,18 +199,15 @@ class Questions(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
     text = models.CharField(
         max_length=200,
         verbose_name='Вопрос по заведению',
         help_text='Введите вопрос',
         null=False,
         blank=False,
-    )
-    created_at = models.DateTimeField(
-        verbose_name='Поле для даты вопроса',
-        null=False,
-        blank=False,
-        auto_now_add=True,
     )
 
     def __str__(self):
@@ -213,9 +216,15 @@ class Questions(models.Model):
     class Meta:
         verbose_name = 'Вопрос к заведению'
         verbose_name_plural = 'Вопросы к заведениям'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'content_type', 'object_id', 'text'],
+                name='unique_question'
+            )
+        ]
 
 
-class Comments(models.Model):
+class Comments(TimestampMixin):
     user_id = models.ForeignKey(
         User,
         verbose_name='Пользователь оставивший комментарий',
@@ -233,22 +242,27 @@ class Comments(models.Model):
         null=False,
         blank=False,
     )
-    created_at = models.DateTimeField(
-        verbose_name='Поле для даты оставления ревью',
-        null=False,
-        blank=False,
-        auto_now_add=True,
-    )
 
     def __str__(self):
         return f'{self.user_id} {self.text[:30]} {self.content_object}'
 
+    def clean(self):
+        if not isinstance(self.content_object, (Questions, Reviews)):
+            raise ValidationError(
+                "Поле content_object должно ссылаться только на объекты Questions или Reviews.")
+
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'content_type', 'object_id', 'text'],
+                name='unique_comment'
+            )
+        ]
 
 
-class Votes(models.Model):
+class Votes(TimestampMixin):
     user_id = models.ForeignKey(
         User,
         verbose_name='Пользователь оставивший комментарий',
@@ -261,17 +275,23 @@ class Votes(models.Model):
     content_object = GenericForeignKey('content_type', 'object_id')
     vote_type = models.SmallIntegerField(
         choices=[(1, 'Upvote'), (-1, 'Downvote')])
-    created_at = models.DateTimeField(
-        verbose_name='Поле для даты оставления ревью',
-        null=False,
-        blank=False,
-        auto_now_add=True,
-    )
 
     def __str__(self):
         return f'{self.user_id} оставил {self.vote_type} к {self.content_object}'
 
+    def clean(self):
+        if self.vote_type not in [1, -1]:
+            raise ValidationError("Неверный тип оценки: должен быть 1 или -1.")
+        if not isinstance(self.content_object, (Questions, Reviews)):
+            raise ValidationError(
+                "Поле content_object должно ссылаться только на объекты Questions или Reviews.")
+
     class Meta:
         verbose_name = 'Оценка'
         verbose_name_plural = 'Оценки'
-        unique_together = ('user_id', 'content_type', 'object_id')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'content_type', 'object_id'],
+                name='unique_vote'
+            )
+        ]
