@@ -199,9 +199,6 @@ class Questions(TimestampMixin):
         blank=False,
         on_delete=models.CASCADE,
     )
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
     text = models.CharField(
         max_length=200,
         verbose_name='Вопрос по заведению',
@@ -218,7 +215,7 @@ class Questions(TimestampMixin):
         verbose_name_plural = 'Вопросы к заведениям'
         constraints = [
             models.UniqueConstraint(
-                fields=['user_id', 'content_type', 'object_id', 'text'],
+                fields=['place_id', 'user_id', 'text'],
                 name='unique_question'
             )
         ]
@@ -247,9 +244,9 @@ class Comments(TimestampMixin):
         return f'{self.user_id} {self.text[:30]} {self.content_object}'
 
     def clean(self):
-        if not isinstance(self.content_object, (Questions, Reviews)):
+        if not isinstance(self.content_object, (Questions, Reviews, Comments)):
             raise ValidationError(
-                "Поле content_object должно ссылаться только на объекты Questions или Reviews.")
+                "Поле content_object должно ссылаться только на объекты Questions, Reviews или Comments.")
 
     class Meta:
         verbose_name = 'Комментарий'
@@ -282,7 +279,7 @@ class Votes(TimestampMixin):
     def clean(self):
         if self.vote_type not in [1, -1]:
             raise ValidationError("Неверный тип оценки: должен быть 1 или -1.")
-        if not isinstance(self.content_object, (Questions, Reviews)):
+        if not isinstance(self.content_object, (Questions, Comments, Reviews)):
             raise ValidationError(
                 "Поле content_object должно ссылаться только на объекты Questions или Reviews.")
 

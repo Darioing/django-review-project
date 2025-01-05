@@ -109,6 +109,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "users.User"
 
+MEDIA_URL = '/images/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'images/')
 
 # Разрешает запросы от любого источника (на этапе разработки)
 CORS_ALLOW_ALL_ORIGINS = True
