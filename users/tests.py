@@ -56,7 +56,7 @@ class TestUserLogin:
     @pytest.mark.django_db
     def test_login_success(self, api_client, create_user):
         create_user(email='testuser@example.com',
-                    password='testpassword123', is_active=True)
+                    password='testpassword123')
         response = api_client.post('/user/token/', {
             'email': 'testuser@example.com',
             'password': 'testpassword123',
