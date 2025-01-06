@@ -5,8 +5,9 @@ source venv/Script/activate
 
 ## Миграции
 1. python manage.py makemigrations users
-2. python manage.py makemigrations
-3. python manage.py migrate
+2. python manage.py makemigrations reviews
+3. python manage.py makemigrations
+4. python manage.py migrate
 
 ## Запуск React
 1. Нужен Node.js
@@ -15,3 +16,6 @@ source venv/Script/activate
 
 ## Запуск Django
 1. python manage.py runserver
+
+## Создание бд из копии
+1. python manage.py loaddata db_dump.json
