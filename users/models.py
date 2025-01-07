@@ -64,6 +64,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=False,
         verbose_name='Электронная почта',
     )
+    image = models.ImageField(
+        upload_to='images/user/',
+        verbose_name='Фото пользователя',
+        null=True,
+        blank=True,
+        default="user/default_user.png"
+    )
     is_staff = models.BooleanField(
         _('Модератор'),
         default=False,
