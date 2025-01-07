@@ -6,6 +6,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from unidecode import unidecode
 from django.core.exceptions import ValidationError
+from django.db.models import Avg
 
 
 User = get_user_model()
@@ -67,11 +68,23 @@ class Places(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name="places"
+    )
+    about = models.CharField(
+        max_length=500,
+        verbose_name='О заведении',
+        null=True,
+        blank=True,
     )
     slug = models.SlugField(
         verbose_name='Ссылочное поле(заполняется автоматически)',
         unique=True,
         null=False,
+        blank=True,
+    )
+    rating = models.FloatField(
+        verbose_name='Средний рейтинг заведения',
+        null=True,
         blank=True,
     )
 
@@ -262,7 +275,7 @@ class Comments(TimestampMixin):
 class Votes(TimestampMixin):
     user_id = models.ForeignKey(
         User,
-        verbose_name='Пользователь оставивший комментарий',
+        verbose_name='Пользователь оставивший оценку',
         null=False,
         blank=False,
         on_delete=models.CASCADE,

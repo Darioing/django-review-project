@@ -22,13 +22,15 @@ class PlacesAdmin(admin.ModelAdmin):
         'name',
         'address',
         'category_id',
+        'about',
+        'rating',
         'slug',
     ]
     list_filter = [
         'name',
         'address',
     ]
-    readonly_fields = ('slug',)
+    readonly_fields = ('slug', 'rating')
 
 
 @admin.register(PlacePhotos)
