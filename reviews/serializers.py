@@ -38,9 +38,15 @@ class PlacePhotosSerializer(serializers.ModelSerializer):
 
 
 class QuestionsSerializer(serializers.ModelSerializer):
+    user_fio = serializers.ReadOnlyField(
+        source='user_id.FIO')  # Полное имя пользователя
+    user_avatar = serializers.ImageField(
+        source='user_id.image', read_only=True)  # Аватар пользователя
+
     class Meta:
         model = Questions
-        fields = ['id', 'place_id', 'user_id', 'text', 'created_at']
+        fields = ['id', 'place_id', 'user_id', 'text',
+                  'created_at', 'user_fio', 'user_avatar']
         read_only_fields = ['created_at']
 
 

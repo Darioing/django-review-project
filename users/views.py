@@ -26,7 +26,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Добавить пользовательские данные в токен
         token['FIO'] = user.FIO
         token['email'] = user.email
+        token['user_id'] = user.id
         return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        # Добавить user_id в ответ
+        data['user_id'] = self.user.id
+
+        return data
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

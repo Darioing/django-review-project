@@ -192,7 +192,7 @@ class Reviews(TimestampMixin):
         verbose_name_plural = 'Отзывы заведений'
         constraints = [
             models.UniqueConstraint(
-                fields=['user_id', 'place_id', 'text'], name='unique_review')
+                fields=['user_id', 'place_id'], name='unique_review')
         ]
 
 

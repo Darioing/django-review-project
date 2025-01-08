@@ -24,8 +24,8 @@ const FormLogin = () => {
             });
 
             // Сохранение токенов в локальное хранилище
-            const { access, refresh } = response.data;
-            setTokens(access, refresh);
+            const { access, refresh, user_id } = response.data;
+            setTokens(access, refresh, user_id);
 
             // Установка статуса авторизации
             setIsAuthenticated(true);

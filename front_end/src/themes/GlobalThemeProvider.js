@@ -59,6 +59,11 @@ const globalTheme = createTheme({
             fontWeight: 400,
             lineHeight: "100%",
         },
+        tag: {
+            fontSize: "16px",
+            fontWeight: 400,
+            letterSpacing: "0px",
+        }
     },
     components: {
         MuiButton: {

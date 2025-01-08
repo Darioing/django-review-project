@@ -6,10 +6,11 @@ import {
     CardContent,
     Avatar,
     Divider,
+    Button,
 } from "@mui/material";
 import Star from "@mui/icons-material/Star";
 
-const PlaceReviews = ({ placeId }) => {
+const PlaceReviews = ({ placeId, slug }) => {
     const [reviews, setReviews] = useState([]);
 
     useEffect(() => {
@@ -30,9 +31,6 @@ const PlaceReviews = ({ placeId }) => {
 
     return (
         <Box mt={4}>
-            <Typography variant="h5" mb={2}>
-                Отзывы
-            </Typography>
             {reviews.map((review) => (
                 <Card key={review.id} sx={{ mb: 2, p: 2 }}>
                     <CardContent>

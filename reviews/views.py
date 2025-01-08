@@ -48,7 +48,7 @@ class PlacePhotosViewSet(viewsets.ModelViewSet):
 
 
 class QuestionsViewSet(viewsets.ModelViewSet):
-    queryset = Questions.objects.all()
+    queryset = Questions.objects.none()
     serializer_class = QuestionsSerializer
     permission_classes = [IsAuthenticatedToCreate]
 
@@ -58,6 +58,15 @@ class QuestionsViewSet(viewsets.ModelViewSet):
         elif self.action == 'destroy':
             self.permission_classes = [IsAdminOrReadOnly]
         return super().get_permissions()
+
+    def get_queryset(self):
+        queryset = Questions.objects.all()
+        # Получение параметра place_id из запроса
+        place_id = self.request.query_params.get('place_id')
+        if place_id:
+            # Фильтрация по place_id
+            queryset = queryset.filter(place_id=place_id)
+        return queryset
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):

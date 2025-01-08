@@ -4,30 +4,23 @@ import Star from "@mui/icons-material/Star";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Avatar,
     Box,
     Button,
-    Card,
-    CardActions,
-    CardContent,
     Container,
-    Grid,
     IconButton,
-    MenuItem,
-    Select,
     Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom"; // Для получения slug из URL
+import { useParams, useNavigate } from "react-router-dom"; // Добавлен useNavigate
 import ReviewsByPlace from "../components/ReviewsByPlace";
+import QuestionsByPlace from "../components/QuestionsByPlace"; // Новый компонент для вопросов
 
 const PlaceDetails = () => {
     const { slug } = useParams(); // Получение slug из параметров маршрута
     const [place, setPlace] = useState(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [view, setView] = useState("reviews"); // Состояние переключателя: "reviews" или "questions"
+    const navigate = useNavigate(); // Для перенаправления
 
     useEffect(() => {
         // Запрос к API для получения данных заведения
@@ -61,6 +54,8 @@ const PlaceDetails = () => {
         }
     };
 
+    const isUserAuthenticated = !!localStorage.getItem("access"); // Проверка на авторизацию
+
     if (!place) {
         return (
             <Box
@@ -73,6 +68,7 @@ const PlaceDetails = () => {
             </Box>
         );
     }
+
     return (
         <Box
             display="flex"
@@ -88,16 +84,16 @@ const PlaceDetails = () => {
             }}
         >
             <Container maxWidth="xl">
+                {/* Информация о заведении */}
                 <Box
                     display="flex"
                     flexDirection="column"
-                    minWidth={60}
                     gap={6}
                     p={4}
                     width="100%"
-                    bgcolor="background.default"
                 >
                     <Box display="flex" gap={6} width="100%">
+                        {/* Галерея изображений */}
                         <Box
                             flex={1}
                             height={300}
@@ -121,8 +117,6 @@ const PlaceDetails = () => {
                             >
                                 <Favorite />
                             </IconButton>
-
-                            {/* Левая стрелка */}
                             <IconButton
                                 onClick={handlePrevImage}
                                 sx={{
@@ -139,8 +133,6 @@ const PlaceDetails = () => {
                             >
                                 <ArrowBackIosIcon />
                             </IconButton>
-
-                            {/* Текущая картинка */}
                             {place.photos && place.photos.length > 0 && (
                                 <img
                                     src={place.photos[currentImageIndex]}
@@ -152,8 +144,6 @@ const PlaceDetails = () => {
                                     }}
                                 />
                             )}
-
-                            {/* Правая стрелка */}
                             <IconButton
                                 onClick={handleNextImage}
                                 sx={{
@@ -172,18 +162,24 @@ const PlaceDetails = () => {
                             </IconButton>
                         </Box>
 
+                        {/* Основная информация */}
                         <Box flex={1} display="flex" flexDirection="column" gap={2}>
                             <Box display="flex" flexDirection="column" gap={1}>
                                 <Typography variant="h5">{place.name}</Typography>
                                 <Box
-                                    display="flex"
+                                    display="inline-flex"
                                     alignItems="center"
                                     gap={1}
                                     p={1}
                                     bgcolor="success.light"
                                     borderRadius={1}
+                                    sx={{ width: "fit-content" }}
                                 >
-                                    <Typography variant="body2" color="success.contrastText">
+                                    <Typography
+                                        variant="tag"
+                                        color="success.contrastText"
+                                        sx={{ display: "inline" }}
+                                    >
                                         {place.category_name || "Категория отсутствует"}
                                     </Typography>
                                 </Box>
@@ -197,20 +193,71 @@ const PlaceDetails = () => {
                             <Typography variant="body2" color="textSecondary">
                                 {place.about}
                             </Typography>
+                            {/* Кнопка для добавления отзыва */}
+                            {isUserAuthenticated && (
+                                <Box display="flex" justifyContent="center" my={3} gap={2}>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary.main"
+                                        sx={{
+                                            borderRadius: 1,
+                                            textTransform: "none",
+                                            borderColor: "rgba(179, 179, 179, 1)",
+                                            "&:hover": {
+                                                borderColor: "primary.main",
+                                                backgroundColor: "rgba(245, 245, 245, 1)",
+                                            },
+                                        }}
+                                        onClick={() => navigate(`/add-review/${place.slug}`)}
+                                    >
+                                        Оставить отзыв
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary.main"
+                                        sx={{
+                                            borderRadius: 1,
+                                            textTransform: "none",
+                                            borderColor: "rgba(179, 179, 179, 1)",
+                                            "&:hover": {
+                                                borderColor: "primary.main",
+                                                backgroundColor: "rgba(245, 245, 245, 1)",
+                                            },
+                                        }}
+                                        onClick={() => navigate(`/add-question/${slug}`)}
+                                    >
+                                        Задать вопрос
+                                    </Button>
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Box>
 
-                <Box
-                    display="flex"
-                    flexDirection="column"
-                    width="100%"
-                    gap={3}
-                    p={4}
-                    bgcolor="background.default"
-                >
+
+
+                {/* Переключатель между отзывами и вопросами */}
+                <Box display="flex" justifyContent="center" gap={2} my={3}>
+                    <Button
+                        variant={view === "reviews" ? "contained" : "outlined"}
+                        onClick={() => setView("reviews")}
+                    >
+                        Отзывы
+                    </Button>
+                    <Button
+                        variant={view === "questions" ? "contained" : "outlined"}
+                        onClick={() => setView("questions")}
+                    >
+                        Вопросы
+                    </Button>
                 </Box>
-                <ReviewsByPlace placeId={place.id} />
+
+                {/* Контент в зависимости от выбора */}
+                {view === "reviews" ? (
+                    <ReviewsByPlace placeId={place.id} />
+                ) : (
+                    <QuestionsByPlace placeId={place.id} />
+                )}
             </Container>
         </Box>
     );

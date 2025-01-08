@@ -104,7 +104,10 @@ const Header = () => {
                                     <Button
                                         variant="outlined"
                                         color="secondary"
-                                        onClick={logout}
+                                        onClick={() => {
+                                            logout();
+                                            window.location.reload(); // Принудительное обновление страницы
+                                        }}
                                         sx={{
                                             borderRadius: 1,
                                             textTransform: "none",
