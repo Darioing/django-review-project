@@ -294,7 +294,7 @@ class Votes(TimestampMixin):
             raise ValidationError("Неверный тип оценки: должен быть 1 или -1.")
         if not isinstance(self.content_object, (Questions, Comments, Reviews)):
             raise ValidationError(
-                "Поле content_object должно ссылаться только на объекты Questions или Reviews.")
+                "Поле content_object должно ссылаться только на объекты Questions, Reviews или Comments.")
 
     class Meta:
         verbose_name = 'Оценка'

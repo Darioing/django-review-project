@@ -2,7 +2,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
+from django.db.models import Q
 from rest_framework.decorators import action
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly, IsAuthenticatedToCreate
@@ -99,6 +101,21 @@ class CommentsViewSet(viewsets.ModelViewSet):
         elif self.action == 'destroy':
             self.permission_classes = [IsAdminOrReadOnly]
         return super().get_permissions()
+
+    @action(detail=True, methods=["get"], url_path="by-object")
+    def by_object(self, request, pk=None):
+        # Получаем параметр content_type из запроса
+        content_type = request.query_params.get('content_type')
+        if not content_type:
+            return Response({"error": "Content type is required."}, status=400)
+
+        # Фильтруем комментарии по content_type и object_id
+        comments = Comments.objects.filter(
+            content_type=content_type,
+            object_id=pk
+        )
+        serializer = self.get_serializer(comments, many=True)
+        return Response(serializer.data)
 
 
 class VotesViewSet(viewsets.ModelViewSet):

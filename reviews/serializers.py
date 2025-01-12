@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.contenttypes.models import ContentType
 from .models import Categories, Places, PlacePhotos, Questions, Reviews, Comments, Votes
 
 
@@ -42,12 +43,16 @@ class QuestionsSerializer(serializers.ModelSerializer):
         source='user_id.FIO')  # Полное имя пользователя
     user_avatar = serializers.ImageField(
         source='user_id.image', read_only=True)  # Аватар пользователя
+    self_content_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Questions
         fields = ['id', 'place_id', 'user_id', 'text',
-                  'created_at', 'user_fio', 'user_avatar']
+                  'created_at', 'user_fio', 'user_avatar', 'self_content_type']
         read_only_fields = ['created_at']
+
+    def get_self_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
@@ -55,30 +60,55 @@ class ReviewsSerializer(serializers.ModelSerializer):
         source='user_id.FIO')  # Полное имя пользователя
     user_avatar = serializers.ImageField(
         source='user_id.image', read_only=True)  # Аватар пользователя
+    self_content_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Reviews
         fields = [
             'id', 'place_id', 'user_id', 'text', 'price', 'service',
-            'interior', 'created_at', 'user_fio', 'user_avatar',
+            'interior', 'created_at', 'user_fio', 'user_avatar', 'self_content_type'
         ]
-        read_only_fields = ['created_at']
+        read_only_fields = ['created_at',
+                            'content_object', 'self_content_type']
+
+    def get_self_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
 
 
 class CommentsSerializer(serializers.ModelSerializer):
+    user_fio = serializers.ReadOnlyField(
+        source='user_id.FIO')  # Полное имя пользователя
+    user_avatar = serializers.ImageField(
+        source='user_id.image', read_only=True)  # Аватар пользователя
+
+    children = serializers.SerializerMethodField()
     content_object = serializers.SerializerMethodField()
+    self_content_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Comments
         fields = [
             'id', 'user_id', 'content_type', 'object_id', 'content_object',
-            'text', 'created_at'
+            'text', 'created_at', 'children', 'user_fio', 'user_avatar', 'self_content_type'
         ]
-        read_only_fields = ['created_at', 'content_object']
+
+        read_only_fields = ['created_at',
+                            'content_object', 'self_content_type']
+
+    def get_children(self, obj):
+        # Фильтруем комментарии, которые ссылаются именно на текущий объект
+        children = Comments.objects.filter(
+            content_type=ContentType.objects.get_for_model(obj),
+            object_id=obj.id
+        )
+        return CommentsSerializer(children, many=True).data
 
     def get_content_object(self, obj):
         # Возвращаем строковое представление связанного объекта
         return str(obj.content_object)
+
+    def get_self_content_type(self, obj):
+        return ContentType.objects.get_for_model(obj).id
 
 
 class VotesSerializer(serializers.ModelSerializer):
@@ -93,5 +123,5 @@ class VotesSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'content_object']
 
     def get_content_object(self, obj):
-        # Возвращает строковое представление связанного объекта
+        # Возвращаем строковое представление связанного объекта
         return str(obj.content_object)

@@ -9,9 +9,14 @@ import {
     Button,
 } from "@mui/material";
 import Star from "@mui/icons-material/Star";
+import CommentThread from "./CommentThread";
+import AddCommentForm from "./AddCommentForm";
 
-const PlaceReviews = ({ placeId, slug }) => {
+const PlaceReviews = ({ placeId }) => {
     const [reviews, setReviews] = useState([]);
+    const [comments, setComments] = useState({});
+    const [activeReviewId, setActiveReviewId] = useState(null);
+    const [replyTarget, setReplyTarget] = useState(null); // Объект, к которому добавляется комментарий
 
     useEffect(() => {
         const fetchReviews = async () => {
@@ -29,6 +34,86 @@ const PlaceReviews = ({ placeId, slug }) => {
         fetchReviews();
     }, [placeId]);
 
+    const fetchComments = async (reviewId) => {
+        try {
+            const response = await fetch(
+                `http://127.0.0.1:8000/review/comments/${reviewId}/by-object/?content_type=13`
+            );
+            const data = await response.json();
+            setComments((prev) => ({ ...prev, [reviewId]: data }));
+        } catch (error) {
+            console.error("Ошибка при загрузке комментариев:", error);
+        }
+    };
+
+
+    const handleAddComment = async (targetObject, commentText) => {
+        const data = {
+            user_id: localStorage.getItem("user_id"),
+            content_type: targetObject.self_content_type,
+            object_id: targetObject.id,
+            text: commentText,
+        };
+
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/review/comments/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("access")}`,
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                const newComment = await response.json();
+                console.log("Добавлен новый комментарий:", newComment);
+
+                setComments((prev) => {
+                    const updatedComments = { ...prev };
+
+                    if (targetObject.self_content_type === 13) {
+                        // Добавление в корневой уровень
+                        updatedComments[targetObject.id] = [
+                            ...(updatedComments[targetObject.id] || []),
+                            newComment,
+                        ];
+                    } else {
+                        // Добавление в ветвь комментариев
+                        const updateBranch = (comments) => {
+                            return comments.map((comment) => {
+                                if (comment.id === targetObject.id) {
+                                    return {
+                                        ...comment,
+                                        children: [...(comment.children || []), newComment],
+                                    };
+                                } else if (comment.children && comment.children.length > 0) {
+                                    return {
+                                        ...comment,
+                                        children: updateBranch(comment.children),
+                                    };
+                                }
+                                return comment;
+                            });
+                        };
+
+                        updatedComments[targetObject.object_id] = updateBranch(
+                            updatedComments[targetObject.object_id] || []
+                        );
+                    }
+
+                    console.log("Обновлённые комментарии:", updatedComments);
+                    return updatedComments;
+                });
+            } else {
+                console.error("Ошибка при добавлении комментария:", await response.text());
+            }
+        } catch (error) {
+            console.error("Ошибка при отправке комментария:", error);
+        }
+    };
+
+
     return (
         <Box mt={4}>
             {reviews.map((review) => (
@@ -45,8 +130,6 @@ const PlaceReviews = ({ placeId, slug }) => {
                                 {review.user_fio}
                             </Typography>
                         </Box>
-
-                        <Divider sx={{ mb: 2 }} />
 
                         {/* Оценки */}
                         <Box
@@ -100,6 +183,59 @@ const PlaceReviews = ({ placeId, slug }) => {
                         >
                             {new Date(review.created_at).toLocaleDateString()}
                         </Typography>
+
+                        {/* Кнопка отображения комментариев */}
+                        <Button
+                            variant="text"
+                            color="primary"
+                            sx={{ mt: 1 }}
+                            onClick={() => {
+                                setActiveReviewId(
+                                    activeReviewId === review.id ? null : review.id
+                                );
+                                fetchComments(review.id);
+                            }}
+                        >
+                            {activeReviewId === review.id
+                                ? "Скрыть комментарии"
+                                : "Показать комментарии"}
+                        </Button>
+
+                        {/* Кнопка добавления комментария */}
+                        <Button
+                            variant="text"
+                            color="secondary"
+                            sx={{ mt: 1 }}
+                            onClick={() => setReplyTarget(review)}
+                        >
+                            Ответить
+                        </Button>
+                        {/* Форма добавления комментария */}
+                        {replyTarget && replyTarget.id === review.id && replyTarget.self_content_type === review.self_content_type && (
+                            <AddCommentForm
+                                onSubmit={(target, text) => handleAddComment(target, text)}
+                                targetObject={replyTarget}
+                                onCancel={() => setReplyTarget(null)} // Кнопка отмены
+                            />
+                        )}
+
+                        {/* Отображение комментариев и формы добавления */}
+                        {activeReviewId === review.id && (
+                            <>
+                                <CommentThread
+                                    comments={comments[review.id] || []}
+                                    onReply={(comment) => setReplyTarget(comment)}
+                                    replyTarget={replyTarget}
+                                    onCancelReply={() => setReplyTarget(null)}
+                                    onAddComment={(target, text) => handleAddComment(target, text)}
+                                    key={review.id + JSON.stringify(comments[review.id] || [])} // Исправленный ключ
+                                />
+
+
+                            </>
+                        )}
+
+
                     </CardContent>
                 </Card>
             ))}

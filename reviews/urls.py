@@ -17,7 +17,7 @@ router.register(r'places', PlacesViewSet)
 router.register(r'place-photos', PlacePhotosViewSet)
 router.register(r'questions', QuestionsViewSet)
 router.register(r'reviews', ReviewsViewSet)
-router.register(r'comments', CommentsViewSet)
+router.register(r'comments', CommentsViewSet, basename='comments')
 router.register(r'votes', VotesViewSet)
 
 urlpatterns = router.urls
