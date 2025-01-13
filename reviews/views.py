@@ -1,9 +1,11 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
-from django.db.models import Q
+from django.db.models import Q, Sum
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
@@ -109,9 +111,13 @@ class CommentsViewSet(viewsets.ModelViewSet):
         if not content_type:
             return Response({"error": "Content type is required."}, status=400)
 
+        try:
+            model_content_type = ContentType.objects.get(pk=content_type)
+        except ContentType.DoesNotExist:
+            return Response({"error": "Неверный content_type"}, status=400)
         # Фильтруем комментарии по content_type и object_id
         comments = Comments.objects.filter(
-            content_type=content_type,
+            content_type=model_content_type,
             object_id=pk
         )
         serializer = self.get_serializer(comments, many=True)
@@ -123,9 +129,95 @@ class VotesViewSet(viewsets.ModelViewSet):
     serializer_class = VotesSerializer
     permission_classes = [IsAuthenticatedToCreate]
 
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        content_type_id = request.data.get('content_type')
+        object_id = request.data.get('object_id')
+        vote_type = int(request.data.get('vote_type'))
+
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+            existing_vote = Votes.objects.filter(
+                user_id=user,
+                content_type=content_type,
+                object_id=object_id
+            ).first()
+
+            if existing_vote:
+                # Если голос существует, обновляем его
+                existing_vote.vote_type = vote_type
+                existing_vote.save()
+            else:
+                # Если голоса нет, создаём новый
+                Votes.objects.create(
+                    user_id=user,
+                    content_type=content_type,
+                    object_id=object_id,
+                    vote_type=vote_type
+                )
+
+            # Пересчитываем сумму голосов для объекта
+            total_votes = Votes.objects.filter(
+                content_type=content_type,
+                object_id=object_id
+            ).aggregate(total=Sum('vote_type'))['total'] or 0
+
+            return Response(
+                {"detail": "Vote processed successfully",
+                    "total_votes": total_votes},
+                status=status.HTTP_200_OK
+            )
+        except ContentType.DoesNotExist:
+            raise ValidationError({"content_type": "Invalid content type"})
+
     def get_permissions(self):
-        if self.action in ['update', 'partial_update']:
-            self.permission_classes = [IsOwnerOrReadOnly]
-        elif self.action == 'destroy':
+        if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = [IsOwnerOrReadOnly]
         return super().get_permissions()
+
+    @action(detail=False, methods=['get'], url_path='total-votes')
+    def total_votes(self, request):
+        """Получение общей суммы голосов для конкретного объекта."""
+        content_type = request.query_params.get('content_type')
+        object_id = request.query_params.get('object_id')
+        if not content_type or not object_id:
+            return Response(
+                {"error": "content_type и object_id обязательны"},
+                status=400
+            )
+
+        try:
+            model_content_type = ContentType.objects.get(pk=content_type)
+        except ContentType.DoesNotExist:
+            return Response({"error": "Неверный content_type"}, status=400)
+
+        total_votes = Votes.objects.filter(
+            content_type=model_content_type,
+            object_id=object_id
+        ).aggregate(total=Sum('vote_type'))['total'] or 0
+
+        return Response({"total_votes": total_votes})
+
+    @action(detail=False, methods=['get'], url_path='user-vote', permission_classes=[IsAuthenticated])
+    def user_vote(self, request):
+        """Получение текущего голоса пользователя для объекта."""
+        content_type = request.query_params.get('content_type')
+        object_id = request.query_params.get('object_id')
+        if not content_type or not object_id:
+            return Response(
+                {"error": "content_type и object_id обязательны"},
+                status=400
+            )
+
+        try:
+            model_content_type = ContentType.objects.get(pk=content_type)
+        except ContentType.DoesNotExist:
+            return Response({"error": "Неверный content_type"}, status=400)
+
+        vote = Votes.objects.filter(
+            content_type=model_content_type,
+            object_id=object_id,
+            user_id=request.user
+        ).first()
+
+        return Response({"user_vote": vote.vote_type if vote else 0})

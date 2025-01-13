@@ -44,35 +44,51 @@ class QuestionsSerializer(serializers.ModelSerializer):
     user_avatar = serializers.ImageField(
         source='user_id.image', read_only=True)  # Аватар пользователя
     self_content_type = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Questions
         fields = ['id', 'place_id', 'user_id', 'text',
-                  'created_at', 'user_fio', 'user_avatar', 'self_content_type']
+                  'created_at', 'user_fio', 'user_avatar', 'self_content_type', 'comment_count']
         read_only_fields = ['created_at']
 
     def get_self_content_type(self, obj):
         return ContentType.objects.get_for_model(obj).id
 
+    def get_comment_count(self, obj):
+        # Подсчет числа комментариев для текущего отзыва
+        return Comments.objects.filter(
+            content_type=ContentType.objects.get_for_model(obj),
+            object_id=obj.id
+        ).count()
+
 
 class ReviewsSerializer(serializers.ModelSerializer):
-    user_fio = serializers.ReadOnlyField(
-        source='user_id.FIO')  # Полное имя пользователя
+    user_fio = serializers.ReadOnlyField(source='user_id.FIO')
     user_avatar = serializers.ImageField(
-        source='user_id.image', read_only=True)  # Аватар пользователя
+        source='user_id.image', read_only=True)
     self_content_type = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Reviews
         fields = [
             'id', 'place_id', 'user_id', 'text', 'price', 'service',
-            'interior', 'created_at', 'user_fio', 'user_avatar', 'self_content_type'
+            'interior', 'created_at', 'user_fio', 'user_avatar',
+            'self_content_type', 'comment_count'  # Добавлено новое поле
         ]
-        read_only_fields = ['created_at',
-                            'content_object', 'self_content_type']
+        read_only_fields = ['created_at', 'content_object',
+                            'self_content_type', 'comment_count']
 
     def get_self_content_type(self, obj):
         return ContentType.objects.get_for_model(obj).id
+
+    def get_comment_count(self, obj):
+        # Подсчет числа комментариев для текущего отзыва
+        return Comments.objects.filter(
+            content_type=ContentType.objects.get_for_model(obj),
+            object_id=obj.id
+        ).count()
 
 
 class CommentsSerializer(serializers.ModelSerializer):
