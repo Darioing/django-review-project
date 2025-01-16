@@ -1,6 +1,9 @@
+from .models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from .models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -28,3 +31,28 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         token['FIO'] = user.FIO
         return token
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'FIO', 'email', 'image', 'date_joined']
+        read_only_fields = ['id', 'email', 'date_joined']
+
+    def update(self, instance, validated_data):
+        """
+        Метод для обновления данных пользователя.
+        """
+        print("upd")
+        # Обновляем FIO, если оно передано
+        if 'FIO' in validated_data:
+            instance.FIO = validated_data['FIO']
+
+        # Обновляем аватар, если он передан
+        if 'image' in validated_data:
+            instance.image = validated_data['image']
+
+        # Сохраняем изменения в базе данных
+        instance.save()
+
+        return instance

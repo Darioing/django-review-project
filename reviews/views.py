@@ -8,6 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
+from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
 from django.shortcuts import get_object_or_404
 from .permissions import IsAdminOrReadOnly, IsOwnerOrReadOnly, IsAuthenticatedToCreate
 from .models import Categories, Places, PlacePhotos, Questions, Reviews, Comments, Votes
@@ -28,21 +30,28 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
 
+class PlacesFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(method='filter_name')
+
+    class Meta:
+        model = Places
+        fields = ['name']
+
+    def filter_name(self, queryset, name, value):
+        filtered_queryset = queryset.filter(name__icontains=value)
+        print(filtered_queryset.query)  # Для отладки
+        return filtered_queryset
+
+
 class PlacesViewSet(viewsets.ModelViewSet):
     queryset = Places.objects.prefetch_related(
-        'photos').all()  # Оптимизация запросов
+        'photos'
+    ).annotate(review_count=Count('reviews'))
     serializer_class = PlacesSerializer
     permission_classes = [IsAdminOrReadOnly]
-    lookup_field = "slug"  # Указываем поле для поиска
-
-    def retrieve(self, request, *args, **kwargs):
-        slug = kwargs.get('slug')
-        place = get_object_or_404(Places, slug=slug)
-        serializer = self.get_serializer(place, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get_queryset(self):
-        return super().get_queryset().annotate(review_count=Count('reviews'))
+    lookup_field = "slug"
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PlacesFilter  # Используем кастомный фильтр
 
 
 class PlacePhotosViewSet(viewsets.ModelViewSet):

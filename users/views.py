@@ -5,8 +5,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserRegistrationSerializer
+from .serializers import UserRegistrationSerializer, UserProfileSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from .permissions import IsOwnerOrReadOnly
+
+User = get_user_model()
 
 
 class UserRegistrationView(APIView):
@@ -60,3 +67,29 @@ class LogoutView(APIView):
             return Response({"message": "Вы успешно вышли из аккаунта."}, status=200)
         except Exception as e:
             return Response({"error": "Произошла ошибка при выходе."}, status=400)
+
+
+class UserProfileViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsOwnerOrReadOnly]
+        elif self.action == 'me':
+            self.permission_classes = [IsAuthenticated]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['get', 'patch'], url_path='me', permission_classes=[IsAuthenticated])
+    def me(self, request):
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)

@@ -10,8 +10,13 @@ from .views import (
     ProtectedView,
     LogoutView,
 )
+from rest_framework.routers import DefaultRouter
+from .views import UserProfileViewSet
 
 app_name = 'users'
+
+router = DefaultRouter()
+router.register(r'profiles', UserProfileViewSet, basename='profile')
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
@@ -22,3 +27,5 @@ urlpatterns = [
     path('protected/', ProtectedView.as_view(), name='protected'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
+
+urlpatterns += router.urls

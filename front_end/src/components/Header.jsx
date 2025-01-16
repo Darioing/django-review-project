@@ -1,12 +1,16 @@
 // src/components/Header.jsx
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import figma from "@mui/icons-material/Star"; // Иконка для логотипа
 import { AppBar, Box, Button, Container, Toolbar, Typography } from "@mui/material";
 import HeaderThemeProvider from "../themes/HeaderThemeProvider"; // Импортируем ThemeProvider для хедера
 import { AuthContext } from "../contexts/AuthContext";
+import Search from "./Search";
 
 const Header = () => {
     const { isAuthenticated, logout } = useContext(AuthContext);
+    const [searchValue, setSearchValue] = useState("");
+
+    const handleClear = () => setSearchValue("");
 
     return (
         <HeaderThemeProvider>
@@ -51,26 +55,11 @@ const Header = () => {
                             </Button>
 
                             {/* Поиск */}
-                            <Button
-                                variant="outlined"
-                                color="primary"
-                                sx={{
-                                    borderRadius: 1,
-                                    textTransform: "none",
-                                    borderColor: "primary.main",
-                                    color: "primary.main",
-                                    "&:hover": {
-                                        borderColor: "primary.dark",
-                                        backgroundColor: "primary.light",
-                                    },
-                                }}
-                            >
-                                <a href="/search" style={{ textDecoration: "none", color: "inherit" }}>
-                                    <Typography variant="body1" color="textPrimary">
-                                        Поиск
-                                    </Typography>
-                                </a>
-                            </Button>
+                            <Search
+                                value={searchValue}
+                                onChange={(e) => setSearchValue(e.target.value)}
+                                onClear={handleClear}
+                            />
 
                             {/* Условный рендеринг */}
                             {isAuthenticated ? (
