@@ -28,6 +28,7 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
     permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
 
 
 class PlacesFilter(django_filters.FilterSet):
@@ -38,9 +39,7 @@ class PlacesFilter(django_filters.FilterSet):
         fields = ['name']
 
     def filter_name(self, queryset, name, value):
-        filtered_queryset = queryset.filter(name__icontains=value)
-        print(filtered_queryset.query)  # Для отладки
-        return filtered_queryset
+        return queryset.filter(name__icontains=value)
 
 
 class PlacesViewSet(viewsets.ModelViewSet):
@@ -58,12 +57,14 @@ class PlacePhotosViewSet(viewsets.ModelViewSet):
     queryset = PlacePhotos.objects.all()
     serializer_class = PlacePhotosSerializer
     permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
 
 
 class QuestionsViewSet(viewsets.ModelViewSet):
     queryset = Questions.objects.none()
     serializer_class = QuestionsSerializer
     permission_classes = [IsAuthenticatedToCreate]
+    filter_backends = [DjangoFilterBackend]
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update']:
@@ -86,6 +87,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     queryset = Reviews.objects.all()
     serializer_class = ReviewsSerializer
     permission_classes = [IsAuthenticatedToCreate]
+    filter_backends = [DjangoFilterBackend]
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update']:
@@ -105,6 +107,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
     queryset = Comments.objects.all()
     serializer_class = CommentsSerializer
     permission_classes = [IsAuthenticatedToCreate]
+    filter_backends = [DjangoFilterBackend]
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update']:
@@ -137,6 +140,7 @@ class VotesViewSet(viewsets.ModelViewSet):
     queryset = Votes.objects.all()
     serializer_class = VotesSerializer
     permission_classes = [IsAuthenticatedToCreate]
+    filter_backends = [DjangoFilterBackend]
 
     def create(self, request, *args, **kwargs):
         user = request.user

@@ -14,6 +14,7 @@ const Search = () => {
     const [value, setValue] = useState("");
     const [results, setResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchPerformed, setSearchPerformed] = useState(false); // Флаг, указывающий, был ли выполнен поиск
 
     const fetchPlaces = async (query) => {
         try {
@@ -32,12 +33,14 @@ const Search = () => {
             setResults([]);
         } finally {
             setIsSearching(false);
+            setSearchPerformed(true); // Устанавливаем флаг после завершения поиска
         }
     };
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && value.trim()) {
             setIsSearching(true);
+            setSearchPerformed(false); // Сбрасываем флаг перед новым поиском
             fetchPlaces(value.trim());
         }
     };
@@ -45,11 +48,13 @@ const Search = () => {
     const handleChange = (e) => {
         setValue(e.target.value);
         setResults([]);
+        setSearchPerformed(false); // Сбрасываем флаг при изменении ввода
     };
 
     const handleClear = () => {
         setValue("");
         setResults([]);
+        setSearchPerformed(false); // Сбрасываем флаг при очистке
     };
 
     return (
@@ -82,7 +87,7 @@ const Search = () => {
                     InputProps={{
                         disableUnderline: true,
                         sx: {
-                            paddingLeft: 1, // Отступ слева
+                            paddingLeft: 1,
                         },
                     }}
                 />
@@ -137,7 +142,7 @@ const Search = () => {
                     ))}
                 </List>
             )}
-            {value && !isSearching && results.length === 0 && (
+            {!isSearching && searchPerformed && results.length === 0 && (
                 <Typography
                     sx={{
                         position: "absolute",
