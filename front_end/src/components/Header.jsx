@@ -80,7 +80,7 @@ const Header = () => {
                                         }}
                                     >
                                         <a
-                                            href="/profile"
+                                            href="/profile/me"
                                             style={{ textDecoration: "none", color: "inherit" }}
                                         >
                                             <Typography variant="body1" color="textPrimary">

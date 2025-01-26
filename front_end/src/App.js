@@ -28,7 +28,7 @@ const App = () => {
               <Route path="/add-question/:slug" element={<AddQuestionForm />} />
               <Route path="/register" element={<FormRegister />} />
               <Route path="/login" element={<FormLogin />} />
-              <Route path="profile/me" element={<UserProfile />} />
+              <Route path="/profile/me" element={<UserProfile />} />
             </Routes>
           </Box>
           <Footer />

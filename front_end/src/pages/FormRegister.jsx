@@ -45,8 +45,8 @@ const FormRegister = () => {
             });
 
             // Сохранение токенов
-            const { access, refresh } = loginResponse.data;
-            setTokens(access, refresh);
+            const { access, refresh, user_id } = loginResponse.data;
+            setTokens(access, refresh, user_id);
 
             // Установка статуса авторизации
             setIsAuthenticated(true);
