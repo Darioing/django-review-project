@@ -62,6 +62,11 @@ class QuestionsSerializer(serializers.ModelSerializer):
             object_id=obj.id
         ).count()
 
+    def update(self, instance, validated_data):
+        instance.text = validated_data.get('text', instance.text)
+        instance.save()
+        return instance
+
 
 class ReviewsSerializer(serializers.ModelSerializer):
     user_fio = serializers.ReadOnlyField(source='user_id.FIO')
@@ -89,6 +94,14 @@ class ReviewsSerializer(serializers.ModelSerializer):
             content_type=ContentType.objects.get_for_model(obj),
             object_id=obj.id
         ).count()
+
+    def update(self, instance, validated_data):
+        instance.text = validated_data.get('text', instance.text)
+        instance.price = validated_data.get('price', instance.price)
+        instance.service = validated_data.get('service', instance.service)
+        instance.interior = validated_data.get('interior', instance.interior)
+        instance.save()
+        return instance
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -125,6 +138,11 @@ class CommentsSerializer(serializers.ModelSerializer):
 
     def get_self_content_type(self, obj):
         return ContentType.objects.get_for_model(obj).id
+
+    def update(self, instance, validated_data):
+        instance.text = validated_data.get('text', instance.text)
+        instance.save()
+        return instance
 
 
 class VotesSerializer(serializers.ModelSerializer):
