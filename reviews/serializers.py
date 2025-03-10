@@ -130,7 +130,7 @@ class CommentsSerializer(serializers.ModelSerializer):
             content_type=ContentType.objects.get_for_model(obj),
             object_id=obj.id
         )
-        return CommentsSerializer(children, many=True).data
+        return CommentsSerializer(children, many=True, context=self.context).data
 
     def get_content_object(self, obj):
         # Возвращаем строковое представление связанного объекта
