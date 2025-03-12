@@ -191,6 +191,9 @@ const PlaceDetails = () => {
                                 </Box>
                             </Box>
                             <Typography variant="body2" color="textSecondary">
+                                {place.address}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
                                 {place.about}
                             </Typography>
                             {/* Кнопка для добавления отзыва */}

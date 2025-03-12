@@ -5,6 +5,7 @@ import { AppBar, Box, Button, Container, Toolbar, Typography } from "@mui/materi
 import HeaderThemeProvider from "../themes/HeaderThemeProvider"; // Импортируем ThemeProvider для хедера
 import { AuthContext } from "../contexts/AuthContext";
 import Search from "./Search";
+import logo from "../assets/logo.png";
 
 const Header = () => {
     const { isAuthenticated, logout } = useContext(AuthContext);
@@ -22,7 +23,7 @@ const Header = () => {
                 <Container maxWidth="xl">
                     <Toolbar disableGutters>
                         <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
-                            <img src={figma} alt="Figma" style={{ width: 40 }} />
+                            <img src={logo} alt="Логотип" style={{ width: 40 }} />
                         </Box>
                         <Box
                             sx={{
