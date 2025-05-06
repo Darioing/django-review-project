@@ -1,22 +1,29 @@
 # tests/conftest.py
 import pytest
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
+import django
+from django.conf import settings
+from django.urls import reverse, resolve
 
-User = get_user_model()
+
+def pytest_configure():
+    django.setup()
 
 
 @pytest.fixture
 def api_client():
+    from rest_framework.test import APIClient
     return APIClient()
 
 
 @pytest.fixture
-def create_user():
-    def _create_user(**kwargs):
+def create_user(db):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    def make_user(**kwargs):
         return User.objects.create_user(
             email=kwargs.get('email', 'test@example.com'),
             password=kwargs.get('password', 'testpass123'),
             FIO=kwargs.get('FIO', 'Test User')
         )
-    return _create_user
+    return make_user
