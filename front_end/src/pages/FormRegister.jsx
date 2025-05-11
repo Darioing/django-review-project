@@ -4,60 +4,55 @@ import {
     Box,
     Button,
     Checkbox,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     FormControlLabel,
     TextField,
     Typography,
+    Link
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
-import { AuthContext } from "../contexts/AuthContext"; // Импорт контекста авторизации
-import { setTokens } from "../utils/auth"; // Утилиты для токенов
-import { useNavigate } from "react-router-dom"; // Импорт useNavigate
+import { AuthContext } from "../contexts/AuthContext";
+import { setTokens } from "../utils/auth";
+import { useNavigate } from "react-router-dom";
 
 const FormRegister = () => {
     const [FIO, setFIO] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [agreement, setAgreement] = useState(false);
-    const { setIsAuthenticated } = useContext(AuthContext); // Получение функции изменения статуса авторизации
-    const navigate = useNavigate(); // Инициализация навигации
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [verificationLink, setVerificationLink] = useState("");
+    const { setIsAuthenticated } = useContext(AuthContext);
+    const navigate = useNavigate();
 
-    const handleSubmit = async () => {
-        if (!agreement) {
-            alert("Вы должны согласиться с условиями!");
-            return;
-        }
-
+    const handleRegister = async () => {
         try {
-            // Регистрация пользователя
-            const registerResponse = await axios.post("http://127.0.0.1:8000/user/register/", {
-                FIO,
-                email,
-                password,
-            });
+            if (!agreement) {
+                alert("Вы должны согласиться с условиями!");
+                return;
+            }
 
-            alert("Регистрация успешна!");
-            console.log(registerResponse.data);
+            // 1. Отправка данных регистрации
+            const response = await axios.post(
+                "http://127.0.0.1:8000/user/register/",
+                { FIO, email, password },
+                {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
 
-            // Автоматический вход после успешной регистрации
-            const loginResponse = await axios.post("http://127.0.0.1:8000/user/login/", {
-                email,
-                password,
-            });
+            // 2. Показываем ссылку для тестирования
+            setVerificationLink(response.data.test_link || "Ссылка сохранена в файл");
+            setShowSuccessDialog(true);
 
-            // Сохранение токенов
-            const { access, refresh, user_id } = loginResponse.data;
-            setTokens(access, refresh, user_id);
-
-            // Установка статуса авторизации
-            setIsAuthenticated(true);
-
-            alert("Вход выполнен успешно!");
-            console.log(loginResponse.data);
-
-            navigate("/");  // Перенаправление на главную страницу
         } catch (error) {
-            console.error(error);
-            alert("Ошибка регистрации или авторизации.");
+            console.error("Ошибка регистрации:", error.response?.data);
+            alert(error.response?.data?.error || "Ошибка регистрации");
         }
     };
 
@@ -72,6 +67,7 @@ const FormRegister = () => {
                 padding: "16px",
             }}
         >
+            {/* Основная форма регистрации */}
             <Box
                 sx={{
                     width: "100%",
@@ -92,8 +88,6 @@ const FormRegister = () => {
                 <TextField
                     fullWidth
                     label="ФИО"
-                    type="text"
-                    variant="outlined"
                     value={FIO}
                     onChange={(e) => setFIO(e.target.value)}
                     sx={{ marginBottom: "16px" }}
@@ -102,7 +96,6 @@ const FormRegister = () => {
                     fullWidth
                     label="Email"
                     type="email"
-                    variant="outlined"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     sx={{ marginBottom: "16px" }}
@@ -111,7 +104,6 @@ const FormRegister = () => {
                     fullWidth
                     label="Пароль"
                     type="password"
-                    variant="outlined"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     sx={{ marginBottom: "16px" }}
@@ -160,13 +152,25 @@ const FormRegister = () => {
                 <Button
                     fullWidth
                     variant="contained"
-                    color="primary"
-                    onClick={handleSubmit}
+                    onClick={handleRegister}
                     sx={{ marginTop: "8px" }}
                 >
                     Зарегистрироваться
                 </Button>
             </Box>
+
+            {/* Модальное окно с ссылкой для подтверждения */}
+            <Dialog open={showSuccessDialog} onClose={() => setShowSuccessDialog(false)}>
+                <DialogTitle>Регистрация почти завершена</DialogTitle>
+                <DialogContent>
+                    <Typography sx={{ mb: 2 }}>
+                        Для завершения регистрации перейдите по ссылке из отправленного вам письма:
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowSuccessDialog(false)}>Закрыть</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

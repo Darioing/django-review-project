@@ -11,7 +11,7 @@ from .views import (
     LogoutView,
 )
 from rest_framework.routers import DefaultRouter
-from .views import UserProfileViewSet
+from .views import UserProfileViewSet, VerifyEmailView
 
 app_name = 'users'
 
@@ -20,6 +20,8 @@ router.register(r'profiles', UserProfileViewSet, basename='profile')
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
+    path('verify-email/<str:token>/',
+         VerifyEmailView.as_view(), name='verify-email'),
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),

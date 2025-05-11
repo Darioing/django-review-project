@@ -1,3 +1,4 @@
+import logging
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from .serializers import CustomTokenObtainPairSerializer
@@ -8,21 +9,116 @@ from rest_framework import status
 from .serializers import UserRegistrationSerializer, UserProfileSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
+from django.urls import reverse_lazy
+from django.shortcuts import redirect
+from django.contrib.auth import login
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from .permissions import IsOwnerOrReadOnly
+import random
+import uuid
+import os
+from datetime import datetime
+from django.conf import settings
+import logging
+import json
+
 
 User = get_user_model()
 
 
+logger = logging.getLogger(__name__)
+
+
 class UserRegistrationView(APIView):
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'User registered successfully!'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        logger.info(f"Начало регистрации. Данные: {request.data}")
+
+        serializer = UserRegistrationSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if not serializer.is_valid():
+            logger.error(f"Ошибки валидации: {serializer.errors}")
+            return Response(serializer.errors, status=400)
+
+        try:
+            email = serializer.validated_data['email']
+            verification_token = str(uuid.uuid4())
+
+            # Сохраняем данные во временное хранилище
+            pending_user = {
+                'email': email,
+                'FIO': serializer.validated_data['FIO'],
+                'password': serializer.validated_data['password'],
+                'token': verification_token,
+                'created_at': str(datetime.now())
+            }
+
+            # Записываем в файл (вместо сессии)
+            pending_dir = os.path.join(settings.BASE_DIR, 'pending_users')
+            os.makedirs(pending_dir, exist_ok=True)
+            user_file = os.path.join(pending_dir, f"{verification_token}.json")
+
+            with open(user_file, 'w') as f:
+                json.dump(pending_user, f, indent=2)
+
+            # Создаем файл с ссылкой (для тестирования)
+            verification_url = f"http://127.0.0.1:8000/user/verify-email/{verification_token}/"
+            email_dir = os.path.join(settings.BASE_DIR, 'email_links')
+            os.makedirs(email_dir, exist_ok=True)
+
+            with open(os.path.join(email_dir, f"{email}.txt"), 'w') as f:
+                f.write(f"Ссылка для подтверждения: {verification_url}\n")
+                f.write(f"Срок действия: 24 часа\n")
+                f.write(f"Файл: {user_file}\n")
+
+            logger.info(f"Ссылка сохранена в файл для {email}")
+
+            return Response({
+                'message': 'Ссылка для подтверждения отправлена',
+                'test_link': verification_url  # Для удобства тестирования
+            }, status=200)
+
+        except Exception as e:
+            logger.error(f"Ошибка регистрации: {str(e)}", exc_info=True)
+            return Response(
+                {'error': 'Internal server error'},
+                status=500
+            )
+
+
+class VerifyEmailView(APIView):
+    def get(self, request, token):
+        try:
+            # 1. Находим файл с токеном
+            pending_dir = os.path.join(settings.BASE_DIR, 'pending_users')
+            token_file = os.path.join(pending_dir, f"{token}.json")
+
+            if not os.path.exists(token_file):
+                return redirect(reverse_lazy('login') + '?error=invalid_token')
+
+            # 2. Загружаем данные пользователя
+            with open(token_file) as f:
+                user_data = json.load(f)
+
+            # 3. Создаем и авторизуем пользователя
+            user = User.objects.create_user(
+                email=user_data['email'],
+                FIO=user_data['FIO'],
+                password=user_data['password']
+            )
+
+            # 4. Очищаем временные данные
+            os.remove(token_file)
+
+            # 5. Перенаправляем на главную
+            return redirect(f"{settings.FRONTEND_URL}/login")
+
+        except Exception as e:
+            print(f"Ошибка{str(e)}")
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
