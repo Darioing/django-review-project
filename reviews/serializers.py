@@ -4,6 +4,12 @@ from .models import Categories, Places, PlacePhotos, Questions, Reviews, Comment
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
+    from rest_framework.validators import UniqueValidator
+
+    name = serializers.CharField(
+        validators=[UniqueValidator(queryset=Categories.objects.all())]
+    )
+
     class Meta:
         model = Categories
         fields = ['id', 'name', 'slug']

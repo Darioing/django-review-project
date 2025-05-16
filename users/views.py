@@ -19,10 +19,11 @@ from .permissions import IsOwnerOrReadOnly
 import random
 import uuid
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.conf import settings
 import logging
 import json
+from django.urls import reverse
 
 
 User = get_user_model()
@@ -93,32 +94,33 @@ class UserRegistrationView(APIView):
 class VerifyEmailView(APIView):
     def get(self, request, token):
         try:
-            # 1. Находим файл с токеном
             pending_dir = os.path.join(settings.BASE_DIR, 'pending_users')
             token_file = os.path.join(pending_dir, f"{token}.json")
 
             if not os.path.exists(token_file):
-                return redirect(reverse_lazy('login') + '?error=invalid_token')
+                return redirect(reverse('users:custom_login') + '?error=invalid_token')
 
-            # 2. Загружаем данные пользователя
             with open(token_file) as f:
                 user_data = json.load(f)
 
-            # 3. Создаем и авторизуем пользователя
+            # Проверка на просроченность токена
+            created_at = datetime.fromisoformat(user_data['created_at'])
+            if datetime.now() - created_at > timedelta(hours=24):
+                os.remove(token_file)
+                return redirect(reverse('users:custom_login') + '?error=expired_token')
+
             user = User.objects.create_user(
                 email=user_data['email'],
                 FIO=user_data['FIO'],
                 password=user_data['password']
             )
 
-            # 4. Очищаем временные данные
             os.remove(token_file)
-
-            # 5. Перенаправляем на главную
             return redirect(f"{settings.FRONTEND_URL}/login")
 
         except Exception as e:
-            print(f"Ошибка{str(e)}")
+            logger.error(f"Verify email error: {str(e)}")
+            return redirect(reverse('users:custom_login') + '?error=server_error')
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
